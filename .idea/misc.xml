@@ -3,8 +3,11 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="app/src/main/res/layout/activity_main.xml" value="0.2907692307692308" />
+        <entry key="app/src/main/res/drawable/ic_classic.xml" value="0.321025641025641" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.24522292993630573" />
         <entry key="app/src/main/res/layout/card_view_songs.xml" value="0.2907692307692308" />
+        <entry key="app/src/main/res/layout/fragment_classic.xml" value="0.29128205128205126" />
+        <entry key="app/src/main/res/layout/fragment_pop.xml" value="0.1578125" />
         <entry key="app/src/main/res/layout/music_fragment.xml" value="0.2907692307692308" />
       </map>
     </option>
