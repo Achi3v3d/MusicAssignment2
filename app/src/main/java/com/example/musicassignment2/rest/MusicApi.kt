@@ -10,9 +10,7 @@ import retrofit2.http.Query
 interface MusicApi {
 
     @GET(SEARCH)
-
     fun getRock(
-
         @Query("term") type:String= ROCK,
         @Query("amp;media") media:String = MEDIA,
         @Query("amp;entity") entity:String = ENTITY,
@@ -21,9 +19,7 @@ interface MusicApi {
     ): Single<RockModel>
 
     @GET(SEARCH)
-
     fun getClassic(
-
         @Query("term") type:String= CLASSIC,
         @Query("amp;media") media:String = MEDIA,
         @Query("amp;entity") entity:String = ENTITY,
@@ -32,9 +28,7 @@ interface MusicApi {
     ): Single<ClassicModel>
 
     @GET(SEARCH)
-
     fun getPop(
-
         @Query("term") type:String= POP,
         @Query("amp;media") media:String = MEDIA,
         @Query("amp;entity") entity:String = ENTITY,
@@ -43,7 +37,6 @@ interface MusicApi {
     ): Single<PopModel>
 
     companion object {
-
         const val BASE_URL = "https://itunes.apple.com/"
         const val SEARCH="search"
         const val ROCK="rock"
