@@ -2,10 +2,8 @@ package com.example.musicassignment2
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.example.musicassignment2.R
 import com.example.musicassignment2.databinding.ActivityMainBinding
 import com.google.android.material.tabs.TabLayoutMediator
-import com.example.musicassignment2
 import com.example.musicassignment2.adaptor.FragmentAdaptor
 
 class MainActivity : AppCompatActivity() {
@@ -28,15 +26,15 @@ class MainActivity : AppCompatActivity() {
             when(position){
                 0-> {
                     tab.text="Rock"
-                    tab.icon=getDrawable(R.drawable.ic_launcher_foreground
+                    tab.icon=getDrawable(R.drawable.ic_rock_music)
                 }
                 1 -> {
                     tab.text="Classic"
-                    tab.icon=getDrawable(R.drawable.ic_classic)
+                    tab.icon=getDrawable(R.drawable.ic_classic_music)
                 }
                 else -> {
                     tab.text="Pop"
-                    tab.icon=getDrawable(R.drawable.ic_pop)
+                    tab.icon=getDrawable(R.drawable.ic_pop_music)
                 }
             }
         }.attach()

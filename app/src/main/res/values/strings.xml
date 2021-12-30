@@ -91,4 +91,11 @@
     </string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="noNetworkError">Network is unavailable</string>
+    <string name="databaseError">Error occured when accessing the data base</string>
+    <string name="playPreviewError">Error when playing preview</string>
+    <string name="noArtist">No Artist Listed</string>
+    <string name="noPrice">No Price Listed</string>
+    <string name="noName">No Name listed</string>
+    <string name="priceCurrency">USD</string>
 </resources>

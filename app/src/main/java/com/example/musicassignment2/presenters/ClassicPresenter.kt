@@ -1,75 +1,168 @@
 package com.example.musicassignment2.presenters
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import com.example.musicassignment2.R
 import com.example.musicassignment2.database.MusicDataBase
 import com.example.musicassignment2.model.classic.ClassicMusic
 import com.example.musicassignment2.rest.MusicApi
+import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import java.lang.Exception
 import javax.inject.Inject
 
 class ClassicPresenter @Inject constructor(
     var context: Context,
-    var networkApi: MusicApi
+    var networkApi: MusicApi,
     var connectivityManager: ConnectivityManager,
     var database: MusicDataBase
 ): IClassicPresenter {
 
-    private var IClassicView : IClassicView? =null
-    private val disposables : CompositeDisposable = CompositeDisposable()
+    private var classicPresenterViewContract : IClassicView? =null
+    private val disposable by lazy {
+        CompositeDisposable()
+    }
     private var isNetworkAvailable = false
 
-
+private lateinit var mediaPlayer: MediaPlayer
+/**
+ * In the initialization the MediaPlayer for
+ */
 
     override fun initPresenter(viewContract: IClassicView) {
-        TODO("Not yet implemented")
+
+        classicPresenterViewContract = viewContract
+        mediaPlayer = MediaPlayer()
     }
 
     override fun getMusicFromServer() {
-        TODO("Not yet implemented")
+
         if(isNetworkAvailable){
             val networkDisposable = networkApi
                 .getClassic()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                    {songs -> presenterViewContract?.songsUpdated(songs.classicMusics)},
-                    {error -> presenterViewContract?.onError(error)}
+                    {songs -> classicPresenterViewContract?.musicUpdated(songs.classicMusics)},
+                    {error -> classicPresenterViewContract ?.onError(error)}
                 )
             disposable.add(networkDisposable)
         }
         else{
-            Log.d("tag_ivan","getClassicFromDB")
-            getSongsFromDB()
+            Log.d("DeBug","getClassicFromDB")
+            getMusicFromDB()
         }
     }
 
     override fun getMusicFromDB() {
-        TODO("Not yet implemented")
+
+        val disposableDB=database.getMusic()
+            .getClassicAll()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                {song -> classicPresenterViewContract?.musicUpdatedFromDataBase(song)},
+                {error -> classicPresenterViewContract?.onError(error)}
+            )
+        disposable.add(disposableDB)
     }
 
     override fun playPreview(previewUrl: String) {
-        TODO("Not yet implemented")
+
+        val disposablePlay = playPreviewBackThread(previewUrl)
+            .subscribeOn(Schedulers.single())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { Log.d("DeBug", "Playing preview") },
+                { error -> classicPresenterViewContract?.onError(error) }
+            )
+        disposable.add(disposablePlay)
     }
 
     override fun stopPreview() {
-        TODO("Not yet implemented")
+
+        if (mediaPlayer.isPlaying) {
+            mediaPlayer.stop()
+            mediaPlayer.reset()
+        }
     }
+
+    /**
+     * Play preview
+     */
+
+
+    private fun playPreviewBackThread(previewUrl: String): Completable {
+            Log.d("DeBug",previewUrl)
+            if (mediaPlayer.isPlaying){
+                mediaPlayer.stop()
+                mediaPlayer.reset()
+            }
+            else{
+                mediaPlayer.reset()
+            }
+            if(isNetworkAvailable){
+                return try {
+                    Log.d("DeBug","inside try mediaplayer")
+                    mediaPlayer.setDataSource(previewUrl)
+                    mediaPlayer.prepare()
+                    mediaPlayer.start()
+                    Completable.complete()
+
+                } catch (e: Exception) {
+                    //Log.d("DeBug",e.localizedMessage)
+                    Completable.error(Throwable(context.getString(R.string.playPreviewError)))
+                }
+            }
+            else{
+                return Completable.error(Throwable(context.getString(R.string.noNetworkError)))
+            }
+
+        }
+
+
+
+
+
+
 
     override fun saveMusicIntoDatabase(songsList: List<ClassicMusic>) {
-        TODO("Not yet implemented")
+
+        val databaseDisposable= this.database.getMusic()
+            .insertClassicSong(songsList)
+            .subscribeOn(Schedulers.io())
+            .subscribe (
+                { Log.d("DeBug","Classic Data Saved")},
+                { Log.d("DeBug",it?.localizedMessage?:context.getString(R.string.databaseError))}
+            )
+        disposable.add(databaseDisposable)
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun checkNetworkConnection() {
-        TODO("Not yet implemented")
+
+        isNetworkAvailable = getActiveNetworkCapabilities()?.let {
+            it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        } ?: false
     }
-
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun getActiveNetworkCapabilities(): NetworkCapabilities? {
+        return connectivityManager.activeNetwork.let {
+            connectivityManager.getNetworkCapabilities(it)
+        }
+    }
     override fun destroyPresenter() {
-        TODO("Not yet implemented")
-
+        disposable.clear()
+        classicPresenterViewContract=null
+        mediaPlayer.release()
     }
 
 }
@@ -87,7 +180,7 @@ interface IClassicPresenter {
 }
 
 interface  IClassicView{
-    fun songsUpdated(classicSongs:List<ClassicMusic>)
-    fun songsUpdatedFromDB(classicSongs:List<ClassicMusic>)
+    fun musicUpdated(classicMusic:List<ClassicMusic>)
+    fun musicUpdatedFromDataBase(classicMusic:List<ClassicMusic>)
     fun onError(error:Throwable)
 }

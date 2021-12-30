@@ -1,71 +1,109 @@
 package com.example.musicassignment2.Views
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.musicassignment2.MusicApplication
 import com.example.musicassignment2.R
-import com.example.musicassignment2.model.pop.PopMusic
+import com.example.musicassignment2.adaptor.RockAdapter
+import com.example.musicassignment2.databinding.MusicFragmentBinding
+import com.example.musicassignment2.model.rock.RockMusic
 import com.example.musicassignment2.presenters.IRockView
+import com.example.musicassignment2.presenters.RockPresenter
+import javax.inject.Inject
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [RockFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RockFragment : Fragment(),IRockView {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    private lateinit var binding: MusicFragmentBinding
+    private lateinit var songsAdapter: RockAdapter
+
+    @Inject
+    lateinit var presenter: RockPresenter
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        MusicApplication.musicComponent.inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+        Log.d("DeBug","onCreate FrCl")
+        presenter.initPresenter(this)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        Log.d("DeBug","onCreateView FrCl")
+        binding= MusicFragmentBinding.inflate(inflater,container,false)
+        songsAdapter= RockAdapter(presenter)
+        songsAdapter.stateRestorationPolicy= RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        binding.swipe.setOnRefreshListener(refreshListener())
+        // Inflate the layout for this fragment
+        return binding.root
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun refreshListener(): SwipeRefreshLayout.OnRefreshListener{
+        return SwipeRefreshLayout.OnRefreshListener{
+            Log.d("DeBug","Refresh")
+            presenter.checkNetworkConnection()
+            presenter.getMusicFromServer()
+            binding.swipe.isRefreshing=false
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_rock, container, false)
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onResume() {
+        super.onResume()
+        Log.d("DeBug","onResume FrCl")
+        binding.recyclermusic.apply {
+            adapter=songsAdapter
+            layoutManager = LinearLayoutManager(activity?.baseContext, LinearLayoutManager.VERTICAL,false)
+        }
+        presenter.checkNetworkConnection()
+        presenter.getMusicFromServer()
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment RockFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic fun newInstance() =
-                RockFragment().apply {
-                    arguments = Bundle().apply {
-                        putString(ARG_PARAM1, param1)
-                        putString(ARG_PARAM2, param2)
-                    }
-                }
+    override fun onPause() {
+        super.onPause()
+        Log.d("DeBug","onPause FrCl")
+        presenter.stopPreview()
     }
 
-    override fun songsUpdated(popSongs: List<PopMusic>) {
-        TODO("Not yet implemented")
+
+
+
+    override fun musicUpdated(rockMusic: List<RockMusic>) {
+        songsAdapter.updateSongsRV(rockMusic as MutableList<RockMusic>)
+        presenter.saveMusicIntoDatabase(rockMusic)
     }
 
-    override fun songsUpdatedFromDB(popSongs: List<PopMusic>) {
-        TODO("Not yet implemented")
+    override fun musicUpdatedFromDataBase(rockMusic: List<RockMusic>) {
+        Toast.makeText(activity, activity?.getString(R.string.noNetworkError), Toast.LENGTH_LONG).show()
+        songsAdapter.updateSongsRV(rockMusic as MutableList<RockMusic>)
     }
 
     override fun onError(error: Throwable) {
-        TODO("Not yet implemented")
+        Toast.makeText(activity,error.localizedMessage, Toast.LENGTH_LONG).show()
+    }
+
+    companion object {
+        @JvmStatic
+        fun newInstance() =
+            ClassicFragment()
     }
 }

@@ -1,8 +1,10 @@
 package com.example.musicassignment2.model.classic
 
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
-
+@Entity
 data class ClassicMusic(
     @SerializedName("artistId")
     val artistId: Int,
@@ -73,7 +75,7 @@ data class ClassicMusic(
     @SerializedName("trackHdRentalPrice")
     val trackHdRentalPrice: Double,
     @SerializedName("trackId")
-    val trackId: Int,
+    @PrimaryKey val trackId: Int,
     @SerializedName("trackName")
     val trackName: String,
     @SerializedName("trackNumber")

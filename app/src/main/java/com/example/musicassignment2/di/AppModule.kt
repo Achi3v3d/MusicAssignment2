@@ -5,9 +5,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import androidx.room.Room
 import com.example.musicassignment2.database.MusicDataBase
+import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
-
+@Module
 class AppModule(    private val application: Application
 ) {
 
@@ -16,7 +17,7 @@ class AppModule(    private val application: Application
      */
     @Provides
     @Singleton
-    fun provideContext(): Context =application.applicationContext
+    fun provideContext(): Context = application.applicationContext
 
 
     /**
@@ -33,10 +34,11 @@ class AppModule(    private val application: Application
      */
     @Provides
     @Singleton
-    fun provideMusicDatabase(context: Context): MusicDataBase{
+    fun provideMusicDatabase(context: Context): MusicDataBase {
         return Room.databaseBuilder(
             context,
-            MusicDatabase::class.java,
+            MusicDataBase::class.java,
             "music-db"
         ).build()
     }
+}

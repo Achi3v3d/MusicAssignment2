@@ -1,93 +1,108 @@
 package com.example.musicassignment2.Views
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.musicassignment2.MusicApplication
 import com.example.musicassignment2.R
-import com.example.musicassignment2.adaptor.ClassicAdaptor
+import com.example.musicassignment2.adaptor.ClassicAdapter
+import com.example.musicassignment2.databinding.MusicFragmentBinding
 import com.example.musicassignment2.model.classic.ClassicMusic
 import com.example.musicassignment2.presenters.ClassicPresenter
 import com.example.musicassignment2.presenters.IClassicView
+import javax.inject.Inject
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class ClassicFragment : Fragment(),IClassicView {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [ClassicFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+    private lateinit var binding: MusicFragmentBinding
+    private lateinit var songsAdapter: ClassicAdapter
 
-/**
- * THE FRAGMENT IS IMPLEMENTING [IClassicView] to update the UI
- */
+    @Inject
+    lateinit var presenter: ClassicPresenter
 
-class ClassicFragment : Fragment(), IClassicView {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-    private lateinit var binding: ClassicFragment
-    private lateinit var classicAdapter: ClassicAdaptor
-
-    private val presenter : ClassicPresenter by lazy{
-        ClassicPresenter()
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        MusicApplication.musicComponent.inject(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        Log.d("DeBug","onCreate FrCl")
+        presenter.initPresenter(this)
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        Log.d("DeBug","onCreateView FrCl")
+        binding= MusicFragmentBinding.inflate(inflater,container,false)
+        songsAdapter= ClassicAdapter(presenter)
+        songsAdapter.stateRestorationPolicy= RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        binding.swipe.setOnRefreshListener(refreshListener())
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_classic, container, false)
+        return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun refreshListener(): SwipeRefreshLayout.OnRefreshListener{
+        return SwipeRefreshLayout.OnRefreshListener{
+            Log.d("DeBug","Refresh")
+            presenter.checkNetworkConnection()
+            presenter.getMusicFromServer()
+            binding.swipe.isRefreshing=false
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onResume() {
         super.onResume()
-
+        Log.d("DeBug","onResume FrCl")
+        binding.recyclermusic.apply {
+            adapter=songsAdapter
+            layoutManager = LinearLayoutManager(activity?.baseContext, LinearLayoutManager.VERTICAL,false)
+        }
+        presenter.checkNetworkConnection()
+        presenter.getMusicFromServer()
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ClassicFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance() =
-            ClassicFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onPause() {
+        super.onPause()
+        Log.d("DeBug","onPause FrCl")
+        presenter.stopPreview()
     }
 
-    override fun songsUpdated(classicSongs: List<ClassicMusic>) {
-        TODO("Not yet implemented")
 
+
+
+    override fun musicUpdated(classicMusic: List<ClassicMusic>) {
+        songsAdapter.updateSongsRV(classicMusic as MutableList<ClassicMusic>)
+        presenter.saveMusicIntoDatabase(classicMusic)
     }
 
-    override fun songsUpdatedFromDB(classicSongs: List<ClassicMusic>) {
-        TODO("Not yet implemented")
+    override fun musicUpdatedFromDataBase(classicMusic: List<ClassicMusic>) {
+        Toast.makeText(activity, activity?.getString(R.string.noNetworkError), Toast.LENGTH_LONG).show()
+        songsAdapter.updateSongsRV(classicMusic as MutableList<ClassicMusic>)
     }
 
     override fun onError(error: Throwable) {
-        TODO("Not yet implemented")
+        Toast.makeText(activity,error.localizedMessage, Toast.LENGTH_LONG).show()
+    }
+
+    companion object {
+        @JvmStatic
+        fun newInstance() =
+            ClassicFragment()
     }
 }
