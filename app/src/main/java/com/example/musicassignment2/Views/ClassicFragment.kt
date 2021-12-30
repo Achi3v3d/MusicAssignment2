@@ -102,7 +102,6 @@ class ClassicFragment : Fragment(),IClassicView {
 
     companion object {
         @JvmStatic
-        fun newInstance() =
-            ClassicFragment()
+        fun newInstance() = ClassicFragment()
     }
 }
