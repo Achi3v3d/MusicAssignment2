@@ -104,6 +104,6 @@ class RockFragment : Fragment(),IRockView {
     companion object {
         @JvmStatic
         fun newInstance() =
-            ClassicFragment()
+            RockFragment()
     }
 }

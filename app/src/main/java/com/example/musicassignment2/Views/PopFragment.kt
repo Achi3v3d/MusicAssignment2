@@ -105,6 +105,6 @@ class PopFragment : Fragment(), IPopView {
     companion object {
         @JvmStatic
         fun newInstance() =
-            ClassicFragment()
+            PopFragment()
     }
 }
